@@ -9,7 +9,7 @@
 
 
 <br>
-This Ansible script provides a Fabric Minecraft server setup through Docker, allowing you to easily deploy and manage a Fabric modded Minecraft server. It supports the latest Fabric loader and launcher version ```1.21.4``` . The server can be configured to run on a specific Minecraft version and supports additional environment variables for customization. It sets up the necessary environment, installs Docker, creates a Minecraft server container, and configures various settings including server properties and mods from Modrinth.
+This Ansible script provides a Fabric Minecraft server setup through Docker, allowing you to easily deploy and manage a Fabric modded Minecraft server. It supports the latest Fabric loader and launcher (version 1.21.4). The server can be configured to run on a specific Minecraft version and supports additional environment variables for customization. It sets up the necessary environment, installs Docker, creates a Minecraft server container, and configures various settings including server properties and mods from Modrinth.
 
 ## Requirements:
 - Ansible Core ```version 2.11 or higher```
