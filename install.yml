@@ -1,0 +1,133 @@
+--- 
+- hosts: localhost
+  gather_facts: false
+  tasks:
+
+# Update System Packages for Ubuntu
+  - name: Install aptitude
+    apt:
+      name: aptitude
+      state: latest
+      update_cache: true
+
+# Install Required Packages for Docker Installation
+  - name: Install required system packages
+    apt:
+      pkg:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - python3-pip
+        - virtualenv
+        - python3-setuptools
+      state: latest
+      update_cache: true
+
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu jammy stable
+      state: present
+
+  - name: Update apt and install docker-ce
+    apt:
+      name: docker-ce
+      state: latest
+      update_cache: true
+
+# Create File Directory for Compose File
+  - name: Create File Directory for Compose
+    file:
+      path: /home/user/Documents/ansible/compose_files/{{ item }}
+      state: directory
+    with_items:
+      - minecraft
+
+# Create Minecraft Compose File
+  - name: Creating Fabric Minecraft Compose File
+    copy:
+      dest: "/home/user/Documents/ansible/compose_files/minecraft/compose.yml"
+      content: |
+        services:
+          minecraft-server:
+            image: itzg/minecraft-server:latest
+            container_name: minecraft
+            environment:
+              EULA: "true"
+              TYPE: "FABRIC"
+              VERSION: "1.21.4"
+              MOTD: "Welcome To §3§lMinecraft Docker --> §r\n§c§lContainerized§r§l - §kBuild your server"
+              DIFFICULTY: "easy"
+              GAMEMODE: "survival"
+              MAX_PLAYERS: "15"
+              WHITELIST: "false"
+              LEVEL_SEED: "542282774301782913"
+              GENERATE_STRUCTURES: "true"
+              ALLOW_NETHER: "true"
+            volumes:
+              - /Documents/Servers/minecraft/world:/data
+              - /Documents/Servers/minecraft/configurations:/data/config
+            ports:
+              - 25565:25565
+            restart: unless-stopped
+
+# Open Firewall Port
+  - name: Open Ports For SSH and Minecraft Server
+    ufw:
+      state: enabled
+      rule: allow
+      port: "{{ item }}"
+      proto: tcp
+    loop:
+      - '22'
+      - '25565'
+
+# Docker Compose Up
+  - name: Deploy Minecraft Docker Compose stack
+    community.docker.docker_compose_v2:
+      project_src: /home/user/Documents/ansible/compose_files/minecraft
+      files:
+      - compose.yml
+    
+# Apply Wait for Minecraft
+  - name: Wait for Minecraft to load
+    wait_for:
+      timeout: 120 # Waiting Two Minutes
+  
+# Add Minecraft User to Ops / Admin
+  - name: Add User to Ops Json
+    community.docker.docker_container_exec:
+      container: minecraft
+      argv:
+        - /bin/sh
+        - "-c"
+        - 'echo "[{\"uuid\":\"Your_Player_UUID\",\"name\":\"Your_Minecraft_Username\",\"level\":4}]" > ops.json'
+
+# Install Server Side Fabric Mods for Minecraft Docker
+  - name: Install Server Side Fabric Mods
+    community.docker.docker_container_exec:
+      container: minecraft
+      argv:
+        - /bin/sh
+        - "-c"
+        - |
+          cd mods && \
+          wget https://cdn.modrinth.com/data/P7dR8mSH/versions/HbTXYTBz/fabric-api-0.119.0%2B1.21.4.jar && \
+          wget https://cdn.modrinth.com/data/8oi3bsk5/versions/MuJMtPGQ/Terralith_1.21.x_v2.5.8.jar && \
+          wget https://cdn.modrinth.com/data/TWsbC6jW/versions/35Xcs8k8/AdditionalStructures-1.21.x-%28v.5.0.1-fabric%29.jar && \
+          wget https://cdn.modrinth.com/data/Fb4jn8m6/versions/VZaMZN0O/FallingTree-1.21.4-1.21.4.7.jar && \
+          wget https://cdn.modrinth.com/data/fEwhuw0Y/versions/h4XJpPzd/chestprotection-1.1.1.jar
+
+  - name: Wait a Moment for Server to Settle
+    pause:
+      seconds: 15
+
+  - name: Restart Docker container
+    shell:
+      cmd: sudo docker restart minecraft
+
