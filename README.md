@@ -32,7 +32,7 @@ This Playbook utilizes the [itzg/minecraft-server](https://hub.docker.com/r/itzg
 
 ---
 
-### Install Ansible (Ubuntu)
+### Install Ansible (Ubuntu 24.04)
 1. Ensure your Ubuntu machine is up to date:
    
 ```shell
